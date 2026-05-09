@@ -6,6 +6,7 @@
 
 - [项目简介](#项目简介)
 - [依赖安装](#依赖安装)
+- [完整工作流](#完整工作流)
 - [压缩原理](#压缩原理)
 - [使用方法](#使用方法)
 - [输出目录结构](#输出目录结构)
@@ -14,16 +15,85 @@
 
 ## 项目简介
 
-该工具主要功能：
-1. 使用 K-Means 聚类算法生成具有代表性的数据子集
-2. 同时生成随机样本作为对照
-3. 对比分析原始数据、代表性样本和随机样本的统计特性
-4. 提供丰富的可视化效果
+该工具链包含三个主要脚本，提供完整的数据集处理流程：
+1. **eval_results_to_metadata.py**：将原始评估结果转换为标准的 metadata 格式
+2. **select_metadata_by_kmeans.py**：使用 K-Means 聚类算法从 metadata 中生成具有代表性的子集
+3. **compressed_metadata_to_mini_datasets.py**：将压缩后的 metadata 转换为最终的数据集内容
+
+主要功能特性：
+- 使用 K-Means 聚类算法生成具有代表性的数据子集
+- 同时生成随机样本作为对照
+- 对比分析原始数据、代表性样本和随机样本的统计特性
+- 提供丰富的可视化效果
+- 支持灵活的数据集处理器，可自定义前后处理逻辑
 
 ## 依赖安装
 
 ```bash
 pip install -r requirements.txt
+```
+
+## 完整工作流
+
+本工具包含三个主要脚本，构成完整的数据集处理工作流：
+
+### 1. eval_results_to_metadata.py - 评估结果转 Metadata
+将原始评估结果转换为标准的 metadata 格式，为 K-Means 压缩做准备。
+
+#### 使用示例：
+```bash
+python eval_results_to_metadata.py <dataset_name> --input <原始评估结果路径> --output <metadata输出路径>
+```
+
+#### 参数说明：
+- `dataset_name`: 数据集名称（如 vbench_1.0_mini），用于指定对应的处理模块
+- `--input/-i`: 原始评估结果路径
+- `--output/-o`: 生成的 metadata 文件夹路径
+
+#### 要求：
+- 需要在 `<dataset_name>` 目录下存在 `processor.py` 文件，该文件需实现 `process_eval_results(input_dir, output_dir)` 函数
+
+---
+
+### 2. select_metadata_by_kmeans.py - K-Means 压缩
+使用 K-Means 聚类算法从 metadata 中生成具有代表性的子集。
+
+#### 使用示例：
+```bash
+python select_metadata_by_kmeans.py --input ./multi_data_sample --work-dir ./output --compression-ratio 0.1
+```
+
+---
+
+### 3. compressed_metadata_to_mini_datasets.py - 压缩 Metadata 转 Mini Datasets
+将压缩后的 metadata 转换为最终的数据集内容。
+
+#### 使用示例：
+```bash
+python compressed_metadata_to_mini_datasets.py <dataset_name> --input <压缩后的metadata路径> --output <最终数据集输出路径>
+```
+
+#### 参数说明：
+- `dataset_name`: 数据集名称（如 vbench_1.0_mini），用于指定对应的处理模块
+- `--input/-i`: kmeans压缩后的metadata路径
+- `--output/-o`: 基于压缩的metadata文件夹生成的压缩后的数据集内容路径
+
+#### 要求：
+- 需要在 `<dataset_name>` 目录下存在 `processor.py` 文件，该文件需实现 `process_compressed_metadata(input_dir, output_dir)` 函数
+
+---
+
+### 完整工作流示例（以 vbench_1.0_mini 为例）：
+
+```bash
+# 步骤1: 将评估结果转换为 metadata
+python eval_results_to_metadata.py vbench_1.0_mini --input ./raw_eval_results --output ./vbench_metadata
+
+# 步骤2: 使用 K-Means 压缩 metadata
+python select_metadata_by_kmeans.py --input ./vbench_metadata --work-dir ./compressed_output --compression-ratio 0.1
+
+# 步骤3: 将压缩后的 metadata 转换为最终数据集
+python compressed_metadata_to_mini_datasets.py vbench_1.0_mini --input ./compressed_output/vbench_metadata_compressed_0.10/representative --output ./final_mini_dataset
 ```
 
 ## 压缩原理
