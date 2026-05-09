@@ -1,0 +1,101 @@
+id,opensora2/human_action,Sora_cla/human_action,wan2.1_cla/human_action,wan2.2_cla/human_action,vidu_cla/human_action,Kling-1.6_cla/human_action,hunyuanvideo_cla/human_action,veo_3_cla/human_action,difficulty
+A person is riding a bike,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is marching,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is roller skating,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is tasting beer,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is clapping,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is drawing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is petting animal (not cat),1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is eating watermelon,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is playing harp,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is wrestling,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is riding scooter,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is sweeping floor,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is skateboarding,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is dunking basketball,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is playing flute,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is stretching leg,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is tying tie,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is skydiving,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is shooting goal (soccer),1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is playing piano,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is finger snapping,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is canoeing or kayaking,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is laughing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is digging,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is clay pottery making,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is shooting basketball,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is bending back,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is shaking hands,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is bandaging,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is push up,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is catching or throwing frisbee,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is playing trumpet,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is flying kite,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is filling eyebrows,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is shuffling cards,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is folding clothes,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is smoking,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is tai chi,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is squat,1.0,1.0,1.0,0,1.0,1.0,1.0,1.0,level0
+A person is playing controller,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is throwing axe,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is giving or receiving award,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is air drumming,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is taking a shower,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is planting trees,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is sharpening knives,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is robot dancing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is rock climbing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is hula hooping,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is writing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is bungee jumping,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is pushing cart,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is cleaning windows,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is cutting watermelon,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is cheerleading,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is washing hands,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is ironing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is cutting nails,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is hugging,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is trimming or shaving beard,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is jogging,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is making bed,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is washing dishes,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is grooming dog,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is doing laundry,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is knitting,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is reading book,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is baby waking up,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is massaging legs,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is brushing teeth,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is crawling baby,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is motorcycling,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is driving car,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is sticking tongue out,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is shaking head,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is sword fighting,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is doing aerobics,1.0,1.0,1.0,1.0,1.0,1.0,0,1.0,level0
+A person is strumming guitar,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is riding or walking with horse,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is archery,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is catching or throwing baseball,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is playing chess,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is rock scissors paper,1.0,1.0,1.0,1.0,1.0,1.0,0,1.0,level0
+A person is using computer,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is arranging flowers,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is bending metal,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is ice skating,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is climbing a rope,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is crying,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is dancing ballet,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is getting a haircut,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is running on treadmill,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is kissing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is counting money,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is barbequing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is peeling apples,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is milking cow,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is shining shoes,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is making snowman,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
+A person is sailing,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,level0
