@@ -186,7 +186,7 @@
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright [yyyy] [name of copyright owner]
+   Copyright [AISBench] [name of copyright owner]
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -199,3 +199,18 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+
+================================================================================
+
+VBench License
+==============
+
+This project includes code and data derived from VBench (https://github.com/Vchitect/VBench),
+which is also licensed under the Apache License 2.0.
+
+VBench: Comprehensive Benchmark Suite for Video Generative Models
+Copyright (c) 2023 Vchitect Team
+
+For more information about VBench, please visit:
+https://github.com/Vchitect/VBench
