@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-02-24T10:30:49.625131",
+  "simulations": [
+    {"id": "a505d6c3-f7c7-4207-a449-16e70bea175f", "task_id": "46", "reward_info": {"reward": 1}},
+    {"id": "a505d6c3-f7c7-4207-a449-16e70bea175f", "task_id": "2", "reward_info": {"reward": 0}}
+  ]
+}

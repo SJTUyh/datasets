@@ -92,8 +92,8 @@ def generate_metadata(input_dir: str, output_dir: str) -> None:
         count = len(task_avg_scores)
         avg_score = sum(all_scores) / count if count > 0 else 0
 
-        # 使用模型名称作为分数列名（包含输入目录名，如 "GLM-5-ENABLED/GLM_5_Enabled"）
-        score_col_name = f"{input_dir_name}/{model_name.replace('-', '_')}"
+        # 使用模型名称作为分数列名（格式："{模型名称}/reward"）
+        score_col_name = f"{model_name.replace('-', '_')}/reward"
 
         # 检查 CSV 文件是否存在
         if os.path.exists(csv_path):
