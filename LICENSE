@@ -214,3 +214,17 @@ Copyright (c) 2023 Vchitect Team
 
 For more information about VBench, please visit:
 https://github.com/Vchitect/VBench
+
+================================================================================
+
+TAU2 License
+============
+
+This project includes code and data derived from TAU2 (https://github.com/sierra-research/tau2-bench),
+which is also licensed under the Apache License 2.0.
+
+TAU2: A Holistic Task Automation Benchmark for LLMs
+Copyright (c) 2024 Sierra Research Team
+
+For more information about TAU2, please visit:
+https://github.com/sierra-research/tau2-bench
