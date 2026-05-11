@@ -77,7 +77,7 @@ def generate_metadata(input_dir: str, output_dir: str) -> None:
         task_rewards = defaultdict(list)
         for sim in simulations:
             task_id = str(sim.get('task_id', ''))
-            reward = sim.get('reward_info', {}).get('reward', 0)
+            reward = sim.get('reward_info', {'reward': 0}).get('reward', 0)
             task_rewards[task_id].append(reward)
 
         # 计算每个 task_id 的平均 reward
