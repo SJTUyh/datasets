@@ -155,7 +155,8 @@ multi_data_sample/
             "level1": 1,
             "level2": 2
         },
-        "n_cluster": 5  // 可选，指定簇数
+        "n_cluster": 5,  // 可选，指定簇数
+        "compression_ratio": 0.2  // 可选，指定该数据集的压缩率（优先级高于命令行参数）
     }
 ]
 ```
@@ -301,6 +302,52 @@ python select_metadata_by_kmeans.py --input ./multi_data_sample --work-dir ./out
 
 ```bash
 python select_metadata_by_kmeans.py --input ./multi_data_sample --work-dir ./output --no-visualize
+```
+
+### 场景5：为不同子集设置不同压缩率
+
+在 `info.json` 中为特定子集配置压缩率，优先级高于命令行参数：
+
+```json
+[
+    {
+        "name": "random_metadata0",
+        "count": 160,
+        "avg_scores": [0.05, 0.44, 0.35],
+        "difficulty_map": {
+            "level0": 0,
+            "level1": 1,
+            "level2": 2
+        },
+        "compression_ratio": 0.2  // 使用 20% 压缩率
+    },
+    {
+        "name": "random_metadata1",
+        "count": 198,
+        "avg_scores": [0.11, 0.17, 0.2],
+        "difficulty_map": {
+            "level0": 0,
+            "level1": 1,
+            "level2": 2
+        }
+        // 不配置，使用命令行默认压缩率 0.1
+    },
+    {
+        "name": "random_metadata2",
+        "count": 170,
+        "avg_scores": [0.26, 0.49, 0.47],
+        "difficulty_map": {
+            "level0": 0,
+            "level1": 1
+        },
+        "compression_ratio": 0.05  // 使用 5% 压缩率
+    }
+]
+```
+
+运行脚本（命令行压缩率仅对未配置的子集生效）：
+```bash
+python select_metadata_by_kmeans.py --input ./multi_data_sample --work-dir ./output --compression-ratio 0.1
 ```
 
 ## 性能优化建议

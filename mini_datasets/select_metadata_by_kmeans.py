@@ -463,7 +463,7 @@ def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr
     - input_dir: Directory containing input metadata files
     - repr_dir: Directory to save representative samples
     - random_dir: Directory to save random samples
-    - compression_ratio: Target compression ratio
+    - compression_ratio: Target compression ratio (default, used if not specified in info_item)
     - auto_optimize: Whether to automatically find optimal n_cluster
     - random_state: Random seed
 
@@ -474,6 +474,10 @@ def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr
     difficulty_map = info_item["difficulty_map"]
     # Get n_cluster from info_item if present
     n_cluster = info_item.get("n_cluster")
+    # Get compression_ratio from info_item if present, use default otherwise
+    dataset_compression_ratio = info_item.get("compression_ratio", compression_ratio)
+    if dataset_compression_ratio != compression_ratio:
+        print(f"  Using compression_ratio={dataset_compression_ratio} from info.json (overrides default {compression_ratio})")
 
     # Load data
     csv_path = input_dir / f"{dataset_name}.csv"
@@ -492,7 +496,7 @@ def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr
 
     # Calculate optimal parameters
     n_clusters, n_samples = calculate_optimal_parameters(
-        data, data_size, compression_ratio, n_cluster,
+        data, data_size, dataset_compression_ratio, n_cluster,
         auto_optimize=auto_optimize, original_avg_scores=original_avg_scores,
         score_cols=score_cols, difficulty_map=difficulty_map, random_state=random_state
     )
