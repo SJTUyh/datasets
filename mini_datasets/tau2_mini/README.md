@@ -1,105 +1,54 @@
-# tau2_mini
-
+# TAU2-mini
 ## 简介
+TAU2-mini 是基于[TAU2评估结果](https://github.com/THUDM/TAU2)进行约1/10规模的采样得到的一个小规模数据集，它在测试得分上与原始数据集大致相同。
+## 数据集获取方式
+[🔗TAU2-mini 数据集](https://modelers.cn/datasets/AISBench/TAU2-mini)
 
-tau2_mini 是基于 TAU2 评估结果进行采样的小规模数据集，使用 K-Means 聚类算法从原始评估结果中选择具有代表性的子集。
-
-## 使用方法
-
-### 第一步：将评估结果转换为 metadata
-
+## 复现数据提取过程
+先安装kmeans采样脚本依赖：
 ```bash
-cd d:\for_developing\syh_datasets\datasets\mini_datasets
-python eval_results_to_metadata.py tau2_mini -i <评估结果目录> -o <输出metadata目录>
+pip3 install -r ../requirements.txt
+```
+执行采样过程：
+```bash
+# 步骤1: 使用 K-Means 压缩 metadata，自动为每个子集取最优簇
+python ../select_metadata_by_kmeans.py --input ./tau2_metadata --work-dir ./compressed_output --compression-ratio 0.1 -a
+
+# 步骤2: 将压缩后的 metadata 转换为最终数据集
+python ../compressed_metadata_to_mini_datasets.py tau2_mini --input ./compressed_output/tau2_metadata_output_compressed_0.10 --output ./final_mini_dataset
 ```
 
 例如：
 ```bash
-python eval_results_to_metadata.py tau2_mini -i D:\BRIDGE\TAU2_ORG_EVAL_RESULTS\GLM-5-ENABLED -o d:\for_developing\syh_datasets\datasets\mini_datasets\tau2_mini\tau2_metadata_output
+# 步骤1: 使用 K-Means 压缩 metadata，自动为每个子集取最优簇
+python ../select_metadata_by_kmeans.py --input ./tau2_metadata --work-dir ./compressed_output --compression-ratio 0.1 -a
+
+# 步骤2: 将压缩后的 metadata 转换为最终数据集
+python ../compressed_metadata_to_mini_datasets.py tau2_mini --input ./compressed_output/tau2_metadata_compressed_0.10 --output ./final_mini_dataset
 ```
 
-### 第二步：使用 K-Means 压缩 metadata
-
+采样效果图结构如下：
 ```bash
-python select_metadata_by_kmeans.py --input <metadata目录> --work-dir <输出目录> --compression-ratio 0.1
+compressed_output/
+├── tau2_metadata_compressed_0.10
+│   ├── clustering_visualizations # 每个子集的kmeans聚类效果可视化图
+│   ├── random
+│   └── representative
+└── tau2_metadata_figures_0.10 # 采样得分效果图
+    ├── comparison_summary.json
+    ├── airline_metadata_means_comparison.png
+    ├── retail_metadata_means_comparison.png
+    └── telecom_metadata_means_comparison.png
 ```
 
-例如：
+最终生成的采样数据集如下：
 ```bash
-python select_metadata_by_kmeans.py --input d:\for_developing\syh_datasets\datasets\mini_datasets\tau2_mini\tau2_metadata_output --work-dir d:\for_developing\syh_datasets\datasets\mini_datasets\tau2_mini\compressed_output --compression-ratio 0.1
+final_mini_dataset/
+├── airline
+│   └── split_tasks.json # 在其中添加了一个mini split
+├── retail
+│   └── split_tasks.json # 在其中添加了一个mini split
+└── telecom
+    └── split_tasks.json # 在其中添加了一个mini split
 ```
 
-### 第三步：将压缩后的 metadata 转换为最终数据集
-
-```bash
-python compressed_metadata_to_mini_datasets.py tau2_mini --input <压缩后的metadata目录> --output <最终输出目录>
-```
-
-例如：
-```bash
-python compressed_metadata_to_mini_datasets.py tau2_mini --input d:\for_developing\syh_datasets\datasets\mini_datasets\tau2_mini\compressed_output\tau2_metadata_output_compressed_0.1 --output d:\for_developing\syh_datasets\datasets\mini_datasets\tau2_mini\final_output
-```
-
-## 输入数据格式
-
-评估结果目录应包含多个 JSON 文件，每个文件对应一个子集，文件名格式为：`{模型名称}_{子集名称}_trajectories.json`
-
-例如：
-- `GLM-5-Enabled_airline_trajectories.json`
-- `GLM-5-Enabled_retail_trajectories.json`
-- `GLM-5-Enabled_telecom_trajectories.json`
-
-每个 JSON 文件的格式如下：
-```json
-{
-  "timestamp": "2026-02-24T10:30:49.625131",
-  "simulations": [
-    {
-      "id": "a505d6c3-f7c7-4207-a449-16e70bea175f",
-      "task_id": "46",
-      "reward_info": {
-        "reward": 1
-      }
-    },
-    ...
-  ]
-}
-```
-
-## 输出格式
-
-### metadata 目录结构
-
-```
-metadata_output/
-├── info.json
-├── airline_metadata.csv
-├── retail_metadata.csv
-└── telecom_metadata.csv
-```
-
-### info.json 格式
-
-```json
-[
-  {
-    "name": "airline_metadata",
-    "count": 100,
-    "avg_scores": [0.65],
-    "difficulty_map": {
-      "level0": 0
-    }
-  },
-  ...
-]
-```
-
-### CSV 文件格式
-
-CSV 文件的特征列使用模型名称命名（连字符 `-` 会被替换为下划线 `_`）：
-
-```csv
-id,GLM_5_Enabled,difficulty
-46,0.75,level0
-2,0.5,level0
-```

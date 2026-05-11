@@ -12,4 +12,4 @@
 |数据集|简介|
 | ---- | ---- |
 |[VBench-1.0-mini](./mini_datasets/vbench_1.0_mini/)|基于VBench 1.0 采样1/10的子集|
-
+|[TAU2-mini](./mini_datasets/tau2_mini/)|基于TAU2 采样1/10的子集|
