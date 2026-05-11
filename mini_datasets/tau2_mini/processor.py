@@ -15,7 +15,8 @@ tools_dir = Path(__file__).parent / 'tools'
 sys.path.insert(0, str(tools_dir))
 
 # 导入所需的工具函数
-from convert_tau2_results import generate_metadata, extract_subsets
+from convert_tau2_results import generate_metadata
+from extract_tau2_subsets import extract_subsets
 
 
 def process_eval_results(input_dir: str, output_dir: str) -> None:
@@ -40,14 +41,18 @@ def process_compressed_metadata(input_dir: str, output_dir: str) -> None:
     处理压缩后的 metadata，生成最终的数据集内容
 
     Args:
-        input_dir: kmeans压缩后的metadata路径
+        input_dir: kmeans压缩后的metadata路径（tau2_output 目录）
         output_dir: 基于压缩的metadata文件夹生成的压缩后的数据集内容路径
     """
     # 确保输出目录存在
     os.makedirs(output_dir, exist_ok=True)
 
-    # 调用 extract_subsets 生成最终的数据集
+    # 调用 extract_tau2_subsets 中的 extract_subsets 函数
     print("=" * 60)
     print("处理压缩后的 metadata")
     print("=" * 60)
     extract_subsets(input_dir, output_dir)
+
+    print("\n" + "=" * 60)
+    print("处理完成！")
+    print(f"输出目录: {output_dir}")
