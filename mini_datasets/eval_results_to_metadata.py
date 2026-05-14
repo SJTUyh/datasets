@@ -11,19 +11,45 @@ import importlib.util
 from pathlib import Path
 
 
+def process_dataset(dataset_name: str, input_dir: str, output_dir: str) -> None:
+    """
+    动态加载数据集对应的 processor 模块并调用其 process_eval_results。
+
+    Args:
+        dataset_name: 数据集名称（如 vbench_1.0_mini）
+        input_dir: 原始评估结果路径
+        output_dir: 生成的 metadata 文件夹路径
+    """
+    current_dir = Path(__file__).parent
+
+    processor_path = current_dir / dataset_name / 'processor.py'
+
+    if not processor_path.exists():
+        raise FileNotFoundError(f"找不到处理文件: {processor_path}")
+
+    spec = importlib.util.spec_from_file_location('processor', processor_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"无法加载模块: {processor_path}")
+
+    processor_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(processor_module)
+
+    print(f"使用数据集处理模块: {dataset_name}/processor.py")
+
+    processor_module.process_eval_results(input_dir, output_dir)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='将评估结果转换为 metadata 格式'
     )
 
-    # 第一个位置参数：数据集名称（如 vbench_1.0_mini）
     parser.add_argument(
         'dataset_name',
         type=str,
         help='数据集名称（如 vbench_1.0_mini）'
     )
 
-    # 输入目录
     parser.add_argument(
         '--input', '-i',
         type=str,
@@ -31,7 +57,6 @@ def main():
         help='原始评估结果路径'
     )
 
-    # 输出目录
     parser.add_argument(
         '--output', '-o',
         type=str,
@@ -41,30 +66,8 @@ def main():
 
     args = parser.parse_args()
 
-    # 动态导入对应的处理模块
     try:
-        # 添加当前目录到 Python 路径
-        current_dir = Path(__file__).parent
-
-        # 构建 processor.py 的路径
-        processor_path = current_dir / args.dataset_name / 'processor.py'
-
-        if not processor_path.exists():
-            raise FileNotFoundError(f"找不到处理文件: {processor_path}")
-
-        # 使用 importlib 动态加载模块
-        spec = importlib.util.spec_from_file_location('processor', processor_path)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"无法加载模块: {processor_path}")
-
-        processor_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(processor_module)
-
-        print(f"使用数据集处理模块: {args.dataset_name}/processor.py")
-
-        # 调用处理函数
-        processor_module.process_eval_results(args.input, args.output)
-
+        process_dataset(args.dataset_name, args.input, args.output)
     except FileNotFoundError as e:
         print(f"错误：{e}")
         print(f"\n请确保 '{args.dataset_name}' 目录存在并包含 processor.py 文件")
