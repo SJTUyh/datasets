@@ -27,7 +27,10 @@ def collect_rewards_from_subdirs(result_file_dir):
         case_name = name.rsplit("__", 1)[0]
         with open(sub_result, "r", encoding="utf-8") as f:
             data = json.load(f)
-        reward = data.get("verifier_result", {}).get("rewards", {}).get("reward")
+        verifier_result = data.get("verifier_result")
+        if verifier_result is None:
+            continue
+        reward = verifier_result.get("rewards", {}).get("reward")
         if reward is not None:
             case_rewards[case_name].append(float(reward))
     return case_rewards
@@ -42,7 +45,18 @@ def merge_reward_stats(result_files):
 
         evals = data.get("stats", {}).get("evals", {})
         if not evals:
+            verifier_result = data.get("verifier_result")
+            if verifier_result is None:
+                continue
+            reward = verifier_result.get("rewards", {}).get("reward")
+            if reward is None:
+                continue
+            parent_dir = os.path.basename(os.path.dirname(filepath))
+            if "__" in parent_dir:
+                case_name = parent_dir.rsplit("__", 1)[0]
+                case_rewards[case_name].append(float(reward))
             continue
+
         eval_key = next(iter(evals))
         reward_stats = evals[eval_key].get("reward_stats", {}).get("reward", {})
 
