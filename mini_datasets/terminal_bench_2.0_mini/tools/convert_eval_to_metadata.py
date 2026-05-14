@@ -17,22 +17,35 @@ def merge_reward_stats(result_files):
     case_rewards = defaultdict(list)
 
     for filepath in result_files:
-        parent_dir = os.path.basename(os.path.dirname(filepath))
-        if "__" not in parent_dir:
-            continue
-
-        case_name = parent_dir.rsplit("__", 1)[0]
-
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         verifier_result = data.get("verifier_result")
-        if verifier_result is None:
+        if verifier_result is not None:
+            reward = verifier_result.get("rewards", {}).get("reward")
+            if reward is None:
+                continue
+            parent_dir = os.path.basename(os.path.dirname(filepath))
+            if "__" not in parent_dir:
+                continue
+            case_name = parent_dir.rsplit("__", 1)[0]
+            case_rewards[case_name].append(float(reward))
             continue
-        reward = verifier_result.get("rewards", {}).get("reward")
-        if reward is None:
+
+        evals = data.get("stats", {}).get("evals", {})
+        if not evals:
             continue
-        case_rewards[case_name].append(float(reward))
+        eval_key = next(iter(evals))
+        reward_stats = evals[eval_key].get("reward_stats", {}).get("reward", {})
+
+        for reward_str, entries in reward_stats.items():
+            reward_value = float(reward_str)
+            for entry in entries:
+                if "__" in entry:
+                    case_name = entry.rsplit("__", 1)[0]
+                else:
+                    case_name = entry
+                case_rewards[case_name].append(reward_value)
 
     return case_rewards
 
