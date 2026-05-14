@@ -13,68 +13,26 @@ def find_result_files(eval_dir):
     return result_files
 
 
-def collect_rewards_from_subdirs(result_file_dir):
-    case_rewards = defaultdict(list)
-    for name in os.listdir(result_file_dir):
-        subdir = os.path.join(result_file_dir, name)
-        if not os.path.isdir(subdir):
-            continue
-        if "__" not in name:
-            continue
-        sub_result = os.path.join(subdir, "result.json")
-        if not os.path.isfile(sub_result):
-            continue
-        case_name = name.rsplit("__", 1)[0]
-        with open(sub_result, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        verifier_result = data.get("verifier_result")
-        if verifier_result is None:
-            continue
-        reward = verifier_result.get("rewards", {}).get("reward")
-        if reward is not None:
-            case_rewards[case_name].append(float(reward))
-    return case_rewards
-
-
 def merge_reward_stats(result_files):
     case_rewards = defaultdict(list)
 
     for filepath in result_files:
+        parent_dir = os.path.basename(os.path.dirname(filepath))
+        if "__" not in parent_dir:
+            continue
+
+        case_name = parent_dir.rsplit("__", 1)[0]
+
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        evals = data.get("stats", {}).get("evals", {})
-        if not evals:
-            verifier_result = data.get("verifier_result")
-            if verifier_result is None:
-                continue
-            reward = verifier_result.get("rewards", {}).get("reward")
-            if reward is None:
-                continue
-            parent_dir = os.path.basename(os.path.dirname(filepath))
-            if "__" in parent_dir:
-                case_name = parent_dir.rsplit("__", 1)[0]
-                case_rewards[case_name].append(float(reward))
+        verifier_result = data.get("verifier_result")
+        if verifier_result is None:
             continue
-
-        eval_key = next(iter(evals))
-        reward_stats = evals[eval_key].get("reward_stats", {}).get("reward", {})
-
-        if not reward_stats:
-            result_file_dir = os.path.dirname(filepath)
-            fallback_rewards = collect_rewards_from_subdirs(result_file_dir)
-            for case_name, rewards in fallback_rewards.items():
-                case_rewards[case_name].extend(rewards)
+        reward = verifier_result.get("rewards", {}).get("reward")
+        if reward is None:
             continue
-
-        for reward_str, entries in reward_stats.items():
-            reward_value = float(reward_str)
-            for entry in entries:
-                if "__" in entry:
-                    case_name = entry.rsplit("__", 1)[0]
-                else:
-                    case_name = entry
-                case_rewards[case_name].append(reward_value)
+        case_rewards[case_name].append(float(reward))
 
     return case_rewards
 
