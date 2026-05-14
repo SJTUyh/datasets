@@ -644,7 +644,16 @@ def compare_means_single(dataset_name: str, full_data: pd.DataFrame, representat
         chunk_cols = score_cols[start:end]
         chunk_display = display_score_cols[start:end]
 
-        fig, ax = plt.subplots(figsize=(12, 6))
+        max_label_len = max((len(c) for c in chunk_display), default=10)
+        needed_bottom = 0.10 + max_label_len * 0.004
+        if needed_bottom <= 0.25:
+            fig_height = 6
+            actual_bottom = needed_bottom
+        else:
+            fig_height = 6 * (needed_bottom / 0.25)
+            actual_bottom = 0.25
+
+        fig, ax = plt.subplots(figsize=(12, fig_height))
         ax.grid(True, axis='y', linestyle='--', alpha=0.7, zorder=0)
 
         for idx, (sample_name, means) in enumerate(means_df.items()):
@@ -661,7 +670,7 @@ def compare_means_single(dataset_name: str, full_data: pd.DataFrame, representat
         ax.set_xticklabels(chunk_display, rotation=45, ha='right')
         ax.legend()
 
-        plt.tight_layout()
+        plt.subplots_adjust(left=0.07, right=0.97, top=0.92, bottom=actual_bottom)
         suffix = f'_part{chart_idx + 1}' if n_charts > 1 else ''
         plt.savefig(figures_path / f'{dataset_name}_means_comparison{suffix}.png', dpi=300, bbox_inches='tight')
         plt.close()
