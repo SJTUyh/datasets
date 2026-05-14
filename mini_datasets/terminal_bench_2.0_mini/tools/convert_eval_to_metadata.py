@@ -13,6 +13,26 @@ def find_result_files(eval_dir):
     return result_files
 
 
+def collect_rewards_from_subdirs(result_file_dir):
+    case_rewards = defaultdict(list)
+    for name in os.listdir(result_file_dir):
+        subdir = os.path.join(result_file_dir, name)
+        if not os.path.isdir(subdir):
+            continue
+        if "__" not in name:
+            continue
+        sub_result = os.path.join(subdir, "result.json")
+        if not os.path.isfile(sub_result):
+            continue
+        case_name = name.rsplit("__", 1)[0]
+        with open(sub_result, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        reward = data.get("verifier_result", {}).get("rewards", {}).get("reward")
+        if reward is not None:
+            case_rewards[case_name].append(float(reward))
+    return case_rewards
+
+
 def merge_reward_stats(result_files):
     case_rewards = defaultdict(list)
 
@@ -25,6 +45,13 @@ def merge_reward_stats(result_files):
             continue
         eval_key = next(iter(evals))
         reward_stats = evals[eval_key].get("reward_stats", {}).get("reward", {})
+
+        if not reward_stats:
+            result_file_dir = os.path.dirname(filepath)
+            fallback_rewards = collect_rewards_from_subdirs(result_file_dir)
+            for case_name, rewards in fallback_rewards.items():
+                case_rewards[case_name].extend(rewards)
+            continue
 
         for reward_str, entries in reward_stats.items():
             reward_value = float(reward_str)
