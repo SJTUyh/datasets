@@ -67,6 +67,15 @@ def generate_metadata(eval_dir: str, output_dir: str) -> None:
     print(f"Computed average rewards for {count} cases")
     print(f"Overall average score: {avg_score:.4f}")
 
+    if abs(avg_score) < 1e-6:
+        print()
+        print("=" * 60)
+        print(f"  ⚠ WARNING: avg_score is extremely close to 0!")
+        print(f"  Model: {model_name}")
+        print(f"  avg_score = {avg_score}")
+        print("=" * 60)
+        print()
+
     score_col_name = f"{model_name.replace('-', '_')}/reward"
 
     csv_name = "terminal_bench_metadata"
