@@ -64,16 +64,15 @@ def main():
 
     for subdir in subdirs:
         subdir_name = subdir.name
-        sub_output_dir = output_root / subdir_name
 
         print(f"\n{'=' * 60}")
         print(f"处理: {subdir_name}")
         print(f"  输入: {subdir}")
-        print(f"  输出: {sub_output_dir}")
+        print(f"  输出: {output_root}")
         print(f"{'=' * 60}")
 
         try:
-            process_dataset(args.dataset_name, str(subdir), str(sub_output_dir))
+            process_dataset(args.dataset_name, str(subdir), args.output)
             print(f"✓ {subdir_name} 处理成功")
             success_count += 1
         except Exception as e:
