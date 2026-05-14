@@ -11,6 +11,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 
+def truncate_label(name: str, max_length: int = None) -> str:
+    if max_length is None or len(name) <= max_length:
+        return name
+    keep = max(1, (max_length - 3) // 2)
+    return name[:keep] + "..." + name[-keep:]
+
+
 def prepare_data(data: pd.DataFrame, difficulty_map: dict = None) -> pd.DataFrame:
     """
     Prepare data by mapping difficulty and creating numeric version.
@@ -57,7 +64,9 @@ def compute_kmeans(data: pd.DataFrame, n_clusters: int, random_state: int = 42) 
 
 
 def visualize_clustering(data: pd.DataFrame, labels: np.ndarray, centers: np.ndarray,
-                        save_path: Path, dataset_name: str) -> None:
+                        save_path: Path, dataset_name: str,
+                        max_name_length: int = None,
+                        max_elements_per_chart: int = 24) -> None:
     """
     Visualize clustering results using multiple complementary methods.
 
@@ -67,6 +76,8 @@ def visualize_clustering(data: pd.DataFrame, labels: np.ndarray, centers: np.nda
     - centers: Cluster centers
     - save_path: Directory to save figures
     - dataset_name: Name of the dataset for figure naming
+    - max_name_length: Max length of feature names in charts (None = no truncation)
+    - max_elements_per_chart: Max number of elements per chart (default 24)
     """
     save_path.mkdir(exist_ok=True, parents=True)
 
@@ -131,25 +142,45 @@ def visualize_clustering(data: pd.DataFrame, labels: np.ndarray, centers: np.nda
               feature_names[:max_features], loc='upper right')
     ax2.grid(True, alpha=0.3, axis='y')
 
-    # Plot 3: Radar chart of cluster centers
-    ax3 = fig.add_subplot(gs[1, :], projection='polar')
-    angles = np.linspace(0, 2 * np.pi, n_features, endpoint=False).tolist()
-    angles += angles[:1]  # Close the circle
+    display_feature_names = [truncate_label(fn, max_name_length) for fn in feature_names]
 
-    # Scale centers for better visualization
+    # Plot 3: Radar chart of cluster centers (handle splitting if too many features)
     centers_scaled = scaler.transform(centers)
 
-    for i in range(n_clusters):
-        values = centers_scaled[i].tolist()
-        values += values[:1]
-        ax3.plot(angles, values, 'o-', linewidth=2, label=f'Cluster {i}')
-        ax3.fill(angles, values, alpha=0.25)
+    radar_chunks = []
+    for start in range(0, n_features, max_elements_per_chart):
+        end = min(start + max_elements_per_chart, n_features)
+        radar_chunks.append((start, end))
 
-    ax3.set_xticks(angles[:-1])
-    ax3.set_xticklabels(feature_names, fontsize=8)
-    ax3.set_title('Cluster Centers (Scaled)', fontweight='bold', y=1.1)
-    ax3.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
-    ax3.grid(True)
+    for chunk_idx, (chunk_start, chunk_end) in enumerate(radar_chunks):
+        chunk_n = chunk_end - chunk_start
+        chunk_angles = np.linspace(0, 2 * np.pi, chunk_n, endpoint=False).tolist()
+        chunk_angles += chunk_angles[:1]
+
+        if chunk_idx == 0:
+            ax3 = fig.add_subplot(gs[1, :], projection='polar')
+        else:
+            radar_fig = plt.figure(figsize=(10, 8))
+            ax3 = radar_fig.add_subplot(111, projection='polar')
+
+        for i in range(n_clusters):
+            values = centers_scaled[i][chunk_start:chunk_end].tolist()
+            values += values[:1]
+            ax3.plot(chunk_angles, values, 'o-', linewidth=2, label=f'Cluster {i}')
+            ax3.fill(chunk_angles, values, alpha=0.25)
+
+        ax3.set_xticks(chunk_angles[:-1])
+        ax3.set_xticklabels(display_feature_names[chunk_start:chunk_end], fontsize=8)
+        title_suffix = f' (Part {chunk_idx + 1}/{len(radar_chunks)})' if len(radar_chunks) > 1 else ''
+        ax3.set_title(f'Cluster Centers (Scaled){title_suffix}', fontweight='bold', y=1.1)
+        ax3.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+        ax3.grid(True)
+
+        if chunk_idx > 0:
+            radar_fig.savefig(
+                save_path / f'{dataset_name}_clustering_radar_part{chunk_idx + 1}.png',
+                dpi=300, bbox_inches='tight')
+            plt.close(radar_fig)
 
     plt.savefig(save_path / f'{dataset_name}_clustering_visualization.png',
                dpi=300, bbox_inches='tight')
@@ -454,7 +485,7 @@ def calculate_optimal_parameters(data: pd.DataFrame, data_size: int, compression
     return n_clusters, n_samples
 
 
-def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr_dir: Path, random_dir: Path, compression_ratio: float, auto_optimize: bool = False, random_state: int = 42, visualize: bool = True) -> tuple:
+def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr_dir: Path, random_dir: Path, compression_ratio: float, auto_optimize: bool = False, random_state: int = 42, visualize: bool = True, max_name_length: int = None, max_elements_per_chart: int = 24) -> tuple:
     """
     Process a single dataset from the info.json for generation.
 
@@ -511,7 +542,7 @@ def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr
     # Visualize clustering
     if visualize:
         visualize_dir = repr_dir.parent / "clustering_visualizations"
-        visualize_clustering(data_numeric, labels, centers, visualize_dir, dataset_name)
+        visualize_clustering(data_numeric, labels, centers, visualize_dir, dataset_name, max_name_length, max_elements_per_chart)
         print(f"  Clustering visualization saved to: {visualize_dir}")
 
     # Generate samples
@@ -583,48 +614,57 @@ def prepare_numeric_data(data: pd.DataFrame, replace_difficulty_with_number: boo
 
 
 def compare_means_single(dataset_name: str, full_data: pd.DataFrame, representative: pd.DataFrame,
-                         random: pd.DataFrame, figures_path: Path) -> pd.DataFrame:
+                         random: pd.DataFrame, figures_path: Path,
+                         max_name_length: int = None,
+                         max_elements_per_chart: int = 24) -> pd.DataFrame:
     """
     Compare means of different samples against full dataset for a single dataset.
     """
-    # Find score columns (between id and difficulty)
     full_cols = full_data.columns.tolist()
     id_idx = full_cols.index('id')
     difficulty_idx = full_cols.index('difficulty')
     score_cols = full_cols[id_idx + 1:difficulty_idx]
 
-    # Calculate means
+    display_score_cols = [truncate_label(c, max_name_length) for c in score_cols]
+
     means_df = pd.DataFrame({
         "Full Dataset": full_data.mean(numeric_only=True),
         "K-means Representative": representative.mean(numeric_only=True),
         "Random": random.mean(numeric_only=True)
     })
 
-    # Plot
-    fig, ax = plt.subplots(figsize=(12, 6))
+    n_elements = len(score_cols)
+    n_charts = (n_elements + max_elements_per_chart - 1) // max_elements_per_chart
     markers = ['o', 's', '^']
     line_styles = ['-', '--', ':']
 
-    # Add grid
-    ax.grid(True, axis='y', linestyle='--', alpha=0.7, zorder=0)
+    for chart_idx in range(n_charts):
+        start = chart_idx * max_elements_per_chart
+        end = min(start + max_elements_per_chart, n_elements)
+        chunk_cols = score_cols[start:end]
+        chunk_display = display_score_cols[start:end]
 
-    for idx, (sample_name, means) in enumerate(means_df.items()):
-        ax.plot(score_cols, means[score_cols], marker=markers[idx], linestyle=line_styles[idx],
-                linewidth=2, markersize=8, label=sample_name, zorder=3)
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.grid(True, axis='y', linestyle='--', alpha=0.7, zorder=0)
 
-        # Add value labels for each point
-        for i, val in enumerate(means[score_cols]):
-            ax.text(i, val, f'{val:.3f}', ha='center', va='bottom', fontsize=9, zorder=4)
+        for idx, (sample_name, means) in enumerate(means_df.items()):
+            ax.plot(chunk_display, means[chunk_cols], marker=markers[idx], linestyle=line_styles[idx],
+                    linewidth=2, markersize=8, label=sample_name, zorder=3)
 
-    ax.set_ylabel('Mean Value')
-    ax.set_title(f'Means Comparison - {dataset_name}')
-    ax.set_xticks(range(len(score_cols)))
-    ax.set_xticklabels(score_cols, rotation=45, ha='right')
-    ax.legend()
+            for i, val in enumerate(means[chunk_cols]):
+                ax.text(i, val, f'{val:.3f}', ha='center', va='bottom', fontsize=9, zorder=4)
 
-    plt.tight_layout()
-    plt.savefig(figures_path / f'{dataset_name}_means_comparison.png', dpi=300, bbox_inches='tight')
-    plt.close()
+        ax.set_ylabel('Mean Value')
+        title_suffix = f' (Part {chart_idx + 1}/{n_charts})' if n_charts > 1 else ''
+        ax.set_title(f'Means Comparison - {dataset_name}{title_suffix}')
+        ax.set_xticks(range(len(chunk_display)))
+        ax.set_xticklabels(chunk_display, rotation=45, ha='right')
+        ax.legend()
+
+        plt.tight_layout()
+        suffix = f'_part{chart_idx + 1}' if n_charts > 1 else ''
+        plt.savefig(figures_path / f'{dataset_name}_means_comparison{suffix}.png', dpi=300, bbox_inches='tight')
+        plt.close()
 
     return means_df
 
@@ -649,7 +689,9 @@ def compare_correlation_patterns(full_data: pd.DataFrame, subset_data: pd.DataFr
 
 def process_single_dataset_for_comparison(dataset_name: str, original_dir: Path, repr_dir: Path,
                                           random_dir: Path, figures_path: Path,
-                                          difficulty_map: dict = None) -> dict:
+                                          difficulty_map: dict = None,
+                                          max_name_length: int = None,
+                                          max_elements_per_chart: int = 24) -> dict:
     """Process and compare a single dataset."""
     print(f"\n=== Processing {dataset_name} ===")
 
@@ -681,7 +723,7 @@ def process_single_dataset_for_comparison(dataset_name: str, original_dir: Path,
         random_numeric = prepare_numeric_data(random_sample)
 
         # Compare means - use original data to find column positions
-        means_df = compare_means_single(dataset_name, full_data, representative, random_sample, figures_path)
+        means_df = compare_means_single(dataset_name, full_data, representative, random_sample, figures_path, max_name_length, max_elements_per_chart)
 
         # Compare correlation patterns
         results = {
@@ -717,7 +759,8 @@ def process_single_dataset_for_comparison(dataset_name: str, original_dir: Path,
 
 
 def generate_subsets(input_dir: str, output_dir: str, compression_ratio: float = 0.1,
-                     auto_optimize: bool = False, random_state: int = 42, visualize: bool = True) -> None:
+                     auto_optimize: bool = False, random_state: int = 42, visualize: bool = True,
+                     max_name_length: int = None, max_elements_per_chart: int = 24) -> None:
     """Generate and save different samples from multiple datasets."""
     input_path = Path(input_dir)
     output_path = Path(output_dir)
@@ -742,7 +785,7 @@ def generate_subsets(input_dir: str, output_dir: str, compression_ratio: float =
     for info_item in original_info:
         print(f"\nProcessing {info_item['name']}...")
         repr_info, rand_info = process_single_dataset_for_generation(
-            info_item, input_path, repr_output_dir, random_output_dir, compression_ratio, auto_optimize, random_state, visualize
+            info_item, input_path, repr_output_dir, random_output_dir, compression_ratio, auto_optimize, random_state, visualize, max_name_length, max_elements_per_chart
         )
         repr_info_list.append(repr_info)
         rand_info_list.append(rand_info)
@@ -760,7 +803,8 @@ def generate_subsets(input_dir: str, output_dir: str, compression_ratio: float =
     print(f"  - Random samples saved to: {random_output_dir}")
 
 
-def compare_subsets(original_dir: str, compressed_dir: str, figures_dir: str = "figures") -> None:
+def compare_subsets(original_dir: str, compressed_dir: str, figures_dir: str = "figures",
+                    max_name_length: int = None, max_elements_per_chart: int = 24) -> None:
     """Compare original datasets with compressed samples."""
     # Filter out RuntimeWarning about invalid values in divide
     warnings.filterwarnings('ignore', category=RuntimeWarning, message='invalid value encountered in divide')
@@ -792,7 +836,9 @@ def compare_subsets(original_dir: str, compressed_dir: str, figures_dir: str = "
             repr_path,
             random_path,
             figures_path,
-            difficulty_map
+            difficulty_map,
+            max_name_length,
+            max_elements_per_chart
         )
 
         if result:
@@ -814,7 +860,9 @@ def main(input_dir: str,
          compression_ratio: float = 0.1,
          auto_optimize: bool = False,
          random_state: int = 42,
-         visualize: bool = True) -> None:
+         visualize: bool = True,
+         max_name_length: int = None,
+         max_elements_per_chart: int = 24) -> None:
     """
     Generate subsets and compare them.
 
@@ -825,6 +873,8 @@ def main(input_dir: str,
     - auto_optimize: Whether to automatically find optimal n_cluster
     - random_state: Random seed for reproducibility
     - visualize: Whether to generate visualization
+    - max_name_length: Max length of element names in charts (None = no truncation)
+    - max_elements_per_chart: Max number of elements per chart (default 24)
     """
     work_path = Path(work_dir)
     work_path.mkdir(exist_ok=True, parents=True)
@@ -847,14 +897,18 @@ def main(input_dir: str,
         compression_ratio=compression_ratio,
         auto_optimize=auto_optimize,
         random_state=random_state,
-        visualize=visualize
+        visualize=visualize,
+        max_name_length=max_name_length,
+        max_elements_per_chart=max_elements_per_chart
     )
 
     print(f"\n=== Step 2: Comparing subsets ===")
     compare_subsets(
         original_dir=input_dir,
         compressed_dir=str(output_dir),
-        figures_dir=str(figures_dir)
+        figures_dir=str(figures_dir),
+        max_name_length=max_name_length,
+        max_elements_per_chart=max_elements_per_chart
     )
 
     print(f"\n=== All tasks complete ===")
@@ -876,6 +930,10 @@ if __name__ == "__main__":
                         help='Random seed for reproducibility (default: 42)')
     parser.add_argument('--no-visualize', '-n', action='store_true',
                         help='Disable clustering visualization')
+    parser.add_argument('--max-name-length', '-l', type=int, default=None,
+                       help='Max length of element names in charts; longer names are truncated (default: no truncation)')
+    parser.add_argument('--max-elements-per-chart', '-e', type=int, default=24,
+                       help='Max number of elements per chart; if exceeded, charts are split (default: 24)')
 
     args = parser.parse_args()
 
@@ -885,5 +943,7 @@ if __name__ == "__main__":
         compression_ratio=args.compression_ratio,
         auto_optimize=args.auto_optimize,
         random_state=args.random_state,
-        visualize=not args.no_visualize
+        visualize=not args.no_visualize,
+        max_name_length=args.max_name_length,
+        max_elements_per_chart=args.max_elements_per_chart
     )
