@@ -36,13 +36,14 @@ def process_eval_results(input_dir: str, output_dir: str) -> None:
     print(f"Metadata 已保存到: {output_dir}")
 
 
-def process_compressed_metadata(input_dir: str, output_dir: str) -> None:
+def process_compressed_metadata(input_dir: str, output_dir: str, source_dir: str = None) -> None:
     """
     处理压缩后的 metadata，生成最终的数据集内容
 
     Args:
         input_dir: kmeans压缩后的metadata路径（tau2_output 目录）
         output_dir: 基于压缩的metadata文件夹生成的压缩后的数据集内容路径
+        source_dir: 原始数据集目录路径（tau2 不需要此参数，仅为统一接口保留）
     """
     # 确保输出目录存在
     os.makedirs(output_dir, exist_ok=True)

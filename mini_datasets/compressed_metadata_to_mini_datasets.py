@@ -39,6 +39,14 @@ def main():
         help='基于压缩的metadata文件夹生成的压缩后的数据集内容路径'
     )
 
+    # 原始数据集路径（部分数据集需要，如 terminal_bench_2.0 需传入 terminal-bench-2 目录）
+    parser.add_argument(
+        '--source-dir', '-s',
+        type=str,
+        default=None,
+        help='原始数据集目录路径（如 terminal-bench-2），不传则由 processor 自动检测'
+    )
+
     args = parser.parse_args()
 
     # 动态导入对应的处理模块
@@ -63,7 +71,10 @@ def main():
         print(f"使用数据集处理模块: {args.dataset_name}/processor.py")
 
         # 调用处理函数
-        processor_module.process_compressed_metadata(args.input, args.output)
+        if args.source_dir:
+            processor_module.process_compressed_metadata(args.input, args.output, args.source_dir)
+        else:
+            processor_module.process_compressed_metadata(args.input, args.output)
 
     except FileNotFoundError as e:
         print(f"错误：{e}")
