@@ -336,7 +336,8 @@ def save_sample_and_ids(sample: pd.DataFrame, name: str, data_dir: Path) -> None
 
 def evaluate_n_cluster(data: pd.DataFrame, n_clusters: int, n_samples: int,
                       original_avg_scores: np.ndarray, score_cols: list,
-                      difficulty_map: dict, random_state: int) -> float:
+                      difficulty_map: dict, random_state: int,
+                      normalize_deviation: bool = False) -> float:
     """
     Evaluate a specific n_clusters value by generating a sample and calculating score deviation.
 
@@ -348,12 +349,12 @@ def evaluate_n_cluster(data: pd.DataFrame, n_clusters: int, n_samples: int,
     - score_cols: List of score column names
     - difficulty_map: Difficulty mapping
     - random_state: Random seed
+    - normalize_deviation: If True, use per-column range-normalized MAE instead of raw sum of absolute differences
 
     Returns:
-    - Sum of absolute differences between sample scores and original scores
+    - Deviation score (lower is better)
     """
     if not score_cols:
-        # No score columns, return infinite deviation to avoid optimization
         return float('inf')
 
     data_numeric = prepare_data(data, difficulty_map)
@@ -362,14 +363,21 @@ def evaluate_n_cluster(data: pd.DataFrame, n_clusters: int, n_samples: int,
     if len(sample) == 0:
         return float('inf')
     sample_avg_scores = sample[score_cols].mean().tolist()
-    deviation = np.sum(np.abs(np.array(sample_avg_scores) - original_avg_scores))
+
+    if normalize_deviation:
+        col_ranges = data[score_cols].max().values - data[score_cols].min().values
+        col_ranges = np.where(col_ranges == 0, 1, col_ranges)
+        deviation = float(np.mean(np.abs((np.array(sample_avg_scores) - original_avg_scores) / col_ranges)))
+    else:
+        deviation = float(np.sum(np.abs(np.array(sample_avg_scores) - original_avg_scores)))
+
     return deviation
 
 
 def find_optimal_n_cluster(data: pd.DataFrame, n_samples: int,
                           original_avg_scores: np.ndarray, score_cols: list,
                           difficulty_map: dict, random_state: int,
-                          n_unique: int) -> int:
+                          n_unique: int, normalize_deviation: bool = False) -> int:
     """
     Find optimal n_cluster by evaluating multiple values and choosing the one with closest average scores.
 
@@ -407,7 +415,7 @@ def find_optimal_n_cluster(data: pd.DataFrame, n_samples: int,
 
     for n_clusters in candidates:
         deviation = evaluate_n_cluster(data, n_clusters, n_samples, original_avg_scores,
-                                     score_cols, difficulty_map, random_state)
+                                     score_cols, difficulty_map, random_state, normalize_deviation)
         print(f"    n_cluster={n_clusters}, deviation={deviation:.6f}")
 
         if deviation < best_score:
@@ -426,7 +434,7 @@ def find_optimal_n_cluster(data: pd.DataFrame, n_samples: int,
 
             for n_clusters in fine_candidates:
                 deviation = evaluate_n_cluster(data, n_clusters, n_samples, original_avg_scores,
-                                             score_cols, difficulty_map, random_state)
+                                             score_cols, difficulty_map, random_state, normalize_deviation)
                 print(f"    n_cluster={n_clusters}, deviation={deviation:.6f}")
 
                 if deviation < best_score:
@@ -440,7 +448,8 @@ def find_optimal_n_cluster(data: pd.DataFrame, n_samples: int,
 def calculate_optimal_parameters(data: pd.DataFrame, data_size: int, compression_ratio: float = 0.1,
                                  n_cluster: int = None, auto_optimize: bool = False,
                                  original_avg_scores: np.ndarray = None, score_cols: list = None,
-                                 difficulty_map: dict = None, random_state: int = 42) -> tuple:
+                                 difficulty_map: dict = None, random_state: int = 42,
+                                 normalize_deviation: bool = False) -> tuple:
     """
     Calculate optimal n_clusters and n_samples based on data size and compression ratio.
     Also ensures n_clusters doesn't exceed the number of unique data combinations.
@@ -478,7 +487,7 @@ def calculate_optimal_parameters(data: pd.DataFrame, data_size: int, compression
         print(f"  Using n_cluster={n_clusters} from info.json")
     elif auto_optimize and original_avg_scores is not None and score_cols is not None and len(score_cols) > 0 and difficulty_map is not None:
         n_clusters = find_optimal_n_cluster(data, n_samples, original_avg_scores, score_cols,
-                                          difficulty_map, random_state, n_unique)
+                                          difficulty_map, random_state, n_unique, normalize_deviation)
     else:
         # Calculate initial n_clusters
         initial_n_clusters = min(int(np.sqrt(n_samples)), n_samples)
@@ -504,7 +513,7 @@ def calculate_optimal_parameters(data: pd.DataFrame, data_size: int, compression
     return n_clusters, n_samples
 
 
-def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr_dir: Path, random_dir: Path, compression_ratio: float, auto_optimize: bool = False, random_state: int = 42, visualize: bool = True, max_name_length: int = None, max_elements_per_chart: int = 24) -> tuple:
+def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr_dir: Path, random_dir: Path, compression_ratio: float, auto_optimize: bool = False, random_state: int = 42, visualize: bool = True, max_name_length: int = None, max_elements_per_chart: int = 24, normalize_deviation: bool = False) -> tuple:
     """
     Process a single dataset from the info.json for generation.
 
@@ -548,7 +557,8 @@ def process_single_dataset_for_generation(info_item: dict, input_dir: Path, repr
     n_clusters, n_samples = calculate_optimal_parameters(
         data, data_size, dataset_compression_ratio, n_cluster,
         auto_optimize=auto_optimize, original_avg_scores=original_avg_scores,
-        score_cols=score_cols, difficulty_map=difficulty_map, random_state=random_state
+        score_cols=score_cols, difficulty_map=difficulty_map, random_state=random_state,
+        normalize_deviation=normalize_deviation
     )
     print(f"  Optimal parameters: n_clusters={n_clusters}, n_samples={n_samples}")
 
@@ -788,7 +798,8 @@ def process_single_dataset_for_comparison(dataset_name: str, original_dir: Path,
 
 def generate_subsets(input_dir: str, output_dir: str, compression_ratio: float = 0.1,
                      auto_optimize: bool = False, random_state: int = 42, visualize: bool = True,
-                     max_name_length: int = None, max_elements_per_chart: int = 24) -> None:
+                     max_name_length: int = None, max_elements_per_chart: int = 24,
+                     normalize_deviation: bool = False) -> None:
     """Generate and save different samples from multiple datasets."""
     input_path = Path(input_dir)
     output_path = Path(output_dir)
@@ -813,7 +824,7 @@ def generate_subsets(input_dir: str, output_dir: str, compression_ratio: float =
     for info_item in original_info:
         print(f"\nProcessing {info_item['name']}...")
         repr_info, rand_info = process_single_dataset_for_generation(
-            info_item, input_path, repr_output_dir, random_output_dir, compression_ratio, auto_optimize, random_state, visualize, max_name_length, max_elements_per_chart
+            info_item, input_path, repr_output_dir, random_output_dir, compression_ratio, auto_optimize, random_state, visualize, max_name_length, max_elements_per_chart, normalize_deviation
         )
         repr_info_list.append(repr_info)
         rand_info_list.append(rand_info)
@@ -890,7 +901,8 @@ def main(input_dir: str,
          random_state: int = 42,
          visualize: bool = True,
          max_name_length: int = None,
-         max_elements_per_chart: int = 24) -> None:
+         max_elements_per_chart: int = 24,
+         normalize_deviation: bool = False) -> None:
     """
     Generate subsets and compare them.
 
@@ -927,7 +939,8 @@ def main(input_dir: str,
         random_state=random_state,
         visualize=visualize,
         max_name_length=max_name_length,
-        max_elements_per_chart=max_elements_per_chart
+        max_elements_per_chart=max_elements_per_chart,
+        normalize_deviation=normalize_deviation
     )
 
     print(f"\n=== Step 2: Comparing subsets ===")
@@ -954,6 +967,8 @@ if __name__ == "__main__":
                         help='Target compression ratio (0-1, default: 0.1)')
     parser.add_argument('--auto-optimize', '-a', action='store_true',
                         help='Enable automatic search for optimal n_cluster based on average scores similarity')
+    parser.add_argument('--normalize-deviation', action='store_true',
+                        help='Use normalized MAE (per-column range normalization) instead of raw sum of absolute differences for deviation calculation')
     parser.add_argument('--random-state', '-s', type=int, default=42,
                         help='Random seed for reproducibility (default: 42)')
     parser.add_argument('--no-visualize', '-n', action='store_true',
@@ -973,5 +988,6 @@ if __name__ == "__main__":
         random_state=args.random_state,
         visualize=not args.no_visualize,
         max_name_length=args.max_name_length,
-        max_elements_per_chart=args.max_elements_per_chart
+        max_elements_per_chart=args.max_elements_per_chart,
+        normalize_deviation=args.normalize_deviation
     )
