@@ -399,11 +399,11 @@ def find_optimal_n_cluster(data: pd.DataFrame, n_samples: int,
         # Ensure unique and sorted
         candidates = sorted(list(set(candidates)))
 
-    # Evaluate all candidates
+    # Phase 1: Coarse search
     best_score = float('inf')
     best_n_clusters = min_clusters
 
-    print(f"  Searching optimal n_cluster in range [{min_clusters}, {max_clusters}] (candidates: {candidates})")
+    print(f"  [Phase 1] Coarse search in range [{min_clusters}, {max_clusters}] (candidates: {candidates})")
 
     for n_clusters in candidates:
         deviation = evaluate_n_cluster(data, n_clusters, n_samples, original_avg_scores,
@@ -413,6 +413,25 @@ def find_optimal_n_cluster(data: pd.DataFrame, n_samples: int,
         if deviation < best_score:
             best_score = deviation
             best_n_clusters = n_clusters
+
+    # Phase 2: Fine search around the best candidate
+    if len(candidates) > 1 and max_clusters - min_clusters > len(candidates):
+        best_idx = candidates.index(best_n_clusters)
+        fine_lower = candidates[best_idx - 1] + 1 if best_idx > 0 else min_clusters
+        fine_upper = candidates[best_idx + 1] - 1 if best_idx < len(candidates) - 1 else max_clusters
+
+        if fine_lower <= fine_upper:
+            fine_candidates = list(range(fine_lower, fine_upper + 1))
+            print(f"  [Phase 2] Fine search around n_cluster={best_n_clusters} in range [{fine_lower}, {fine_upper}] (candidates: {fine_candidates})")
+
+            for n_clusters in fine_candidates:
+                deviation = evaluate_n_cluster(data, n_clusters, n_samples, original_avg_scores,
+                                             score_cols, difficulty_map, random_state)
+                print(f"    n_cluster={n_clusters}, deviation={deviation:.6f}")
+
+                if deviation < best_score:
+                    best_score = deviation
+                    best_n_clusters = n_clusters
 
     print(f"  Best n_cluster={best_n_clusters} with deviation={best_score:.6f}")
     return best_n_clusters
