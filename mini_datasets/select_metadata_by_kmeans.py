@@ -365,7 +365,7 @@ def evaluate_n_cluster(data: pd.DataFrame, n_clusters: int, n_samples: int,
     sample_avg_scores = sample[score_cols].mean().tolist()
 
     if normalize_deviation:
-        col_ranges = data[score_cols].max().values - data[score_cols].min().values
+        col_ranges = data_numeric[score_cols].max().values - data_numeric[score_cols].min().values
         col_ranges = np.where(col_ranges == 0, 1, col_ranges)
         deviation = float(np.mean(np.abs((np.array(sample_avg_scores) - original_avg_scores) / col_ranges)))
     else:
