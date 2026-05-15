@@ -12,6 +12,7 @@ tools_dir = Path(__file__).parent / "tools"
 sys.path.insert(0, str(tools_dir))
 
 from convert_evaluate_to_metadata import generate_metadata
+from extract_swe_multilingual_subsets import extract_subsets
 
 
 def process_eval_results(input_dir: str, output_dir: str) -> None:
@@ -43,6 +44,19 @@ def process_compressed_metadata(input_dir: str, output_dir: str, source_dir: str
     print("=" * 60)
     print("处理压缩后的 metadata")
     print("=" * 60)
+
+    representative_dir = Path(input_dir) / 'representative'
+    metadata_csv = representative_dir / 'swe_bench_multilingual_metadata.csv'
+
+    if not metadata_csv.exists():
+        print(f"错误: metadata CSV 文件不存在: {metadata_csv}", file=sys.stderr)
+        sys.exit(1)
+
+    if source_dir is None:
+        print("错误: source_dir 参数未提供，无法筛选数据集", file=sys.stderr)
+        sys.exit(1)
+
+    extract_subsets(str(metadata_csv), source_dir, output_dir)
 
     print("\n" + "=" * 60)
     print("处理完成！")
