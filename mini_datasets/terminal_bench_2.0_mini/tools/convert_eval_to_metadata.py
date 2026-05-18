@@ -2,93 +2,46 @@ import argparse
 import csv
 import json
 import os
-from collections import defaultdict
 
 
-def find_result_files(eval_dir):
-    result_files = []
-    for root, dirs, files in os.walk(eval_dir):
-        if "result.json" in files:
-            result_files.append(os.path.join(root, "result.json"))
-    return result_files
-
-
-def merge_reward_stats(result_files):
-    case_rewards = defaultdict(list)
-
-    for filepath in result_files:
+def read_csv_scores(csv_paths):
+    model_scores = {}
+    for filepath in csv_paths:
+        filename = os.path.basename(filepath)
+        model_name = os.path.splitext(filename)[0]
+        case_scores = {}
         with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        verifier_result = data.get("verifier_result")
-        if verifier_result is not None:
-            reward = verifier_result.get("rewards", {}).get("reward")
-            if reward is None:
-                continue
-            parent_dir = os.path.basename(os.path.dirname(filepath))
-            if "__" not in parent_dir:
-                continue
-            case_name = parent_dir.rsplit("__", 1)[0]
-            case_rewards[case_name].append(float(reward))
-            continue
-
-        evals = data.get("stats", {}).get("evals", {})
-        if not evals:
-            continue
-        eval_key = next(iter(evals))
-        reward_stats = evals[eval_key].get("reward_stats", {}).get("reward", {})
-
-        for reward_str, entries in reward_stats.items():
-            reward_value = float(reward_str)
-            for entry in entries:
-                if "__" in entry:
-                    case_name = entry.rsplit("__", 1)[0]
-                else:
-                    case_name = entry
-                case_rewards[case_name].append(reward_value)
-
-    return case_rewards
+            reader = csv.DictReader(f)
+            for row in reader:
+                task = row.get("Task", "").strip()
+                resolution_rate_str = row.get("Resolution Rate", "0%").strip()
+                resolution_rate_str = resolution_rate_str.rstrip("%")
+                try:
+                    score = float(resolution_rate_str) / 100.0
+                except ValueError:
+                    score = 0.0
+                if task:
+                    case_scores[task] = score
+        model_scores[model_name] = case_scores
+    return model_scores
 
 
-def compute_averages(case_rewards):
-    return {
-        case_name: sum(values) / len(values)
-        for case_name, values in case_rewards.items()
-    }
-
-
-def generate_metadata(eval_dir: str, output_dir: str) -> None:
-    eval_dir = os.path.abspath(eval_dir)
+def generate_metadata(csv_paths: list, output_dir: str) -> None:
     output_dir = os.path.abspath(output_dir)
-    model_name = os.path.basename(eval_dir)
 
-    result_files = find_result_files(eval_dir)
-    if not result_files:
-        print(f"No result.json files found under {eval_dir}")
+    model_scores = read_csv_scores(csv_paths)
+    if not model_scores:
+        print("No valid CSV data found")
         return
 
-    print(f"Found {len(result_files)} result.json file(s)")
+    print(f"Found {len(model_scores)} CSV file(s)")
+    for model_name, scores in model_scores.items():
+        print(f"  {model_name}: {len(scores)} cases")
 
-    case_rewards = merge_reward_stats(result_files)
-    case_averages = compute_averages(case_rewards)
-
-    count = len(case_averages)
-    all_scores = list(case_averages.values())
-    avg_score = sum(all_scores) / count if count > 0 else 0
-
-    print(f"Computed average rewards for {count} cases")
-    print(f"Overall average score: {avg_score:.4f}")
-
-    if abs(avg_score) < 1e-6:
-        print()
-        print("=" * 60)
-        print(f"  ⚠ WARNING: avg_score is extremely close to 0!")
-        print(f"  Model: {model_name}")
-        print(f"  avg_score = {avg_score}")
-        print("=" * 60)
-        print()
-
-    score_col_name = f"{model_name.replace('-', '_')}/reward"
+    all_case_ids = set()
+    for scores in model_scores.values():
+        all_case_ids.update(scores.keys())
+    all_case_ids = sorted(all_case_ids)
 
     csv_name = "terminal_bench_metadata"
     csv_path = os.path.join(output_dir, f"{csv_name}.csv")
@@ -96,12 +49,10 @@ def generate_metadata(eval_dir: str, output_dir: str) -> None:
 
     os.makedirs(output_dir, exist_ok=True)
 
-    if os.path.exists(info_path):
-        with open(info_path, "r", encoding="utf-8") as f:
-            info_data = json.load(f)
-    else:
-        info_data = []
-    info_dict = {item["name"]: item for item in info_data}
+    model_score_cols = {
+        model_name: f"{model_name.replace('-', '_')}/reward"
+        for model_name in model_scores
+    }
 
     if os.path.exists(csv_path):
         existing_rows = []
@@ -111,12 +62,30 @@ def generate_metadata(eval_dir: str, output_dir: str) -> None:
             for row in reader:
                 existing_rows.append(row)
 
-        if score_col_name not in existing_fieldnames:
-            existing_fieldnames.insert(-1, score_col_name)
+        existing_ids = {row["id"] for row in existing_rows}
 
-        for row in existing_rows:
-            data_id = row["id"]
-            row[score_col_name] = case_averages.get(data_id, 0)
+        for model_name, score_col_name in model_score_cols.items():
+            if score_col_name not in existing_fieldnames:
+                if "difficulty" in existing_fieldnames:
+                    diff_idx = existing_fieldnames.index("difficulty")
+                    existing_fieldnames.insert(diff_idx, score_col_name)
+                else:
+                    existing_fieldnames.append(score_col_name)
+
+            scores = model_scores[model_name]
+            for row in existing_rows:
+                data_id = row["id"]
+                row[score_col_name] = scores.get(data_id, 0)
+
+        for case_id in all_case_ids:
+            if case_id not in existing_ids:
+                new_row = {"id": case_id, "difficulty": "level0"}
+                for fn in existing_fieldnames:
+                    if fn not in new_row:
+                        new_row[fn] = 0
+                for model_name, score_col_name in model_score_cols.items():
+                    new_row[score_col_name] = model_scores[model_name].get(case_id, 0)
+                existing_rows.append(new_row)
 
         with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=existing_fieldnames)
@@ -124,31 +93,57 @@ def generate_metadata(eval_dir: str, output_dir: str) -> None:
             for row in existing_rows:
                 writer.writerow(row)
 
-        if csv_name in info_dict:
-            info_dict[csv_name]["avg_scores"].append(avg_score)
-        else:
-            info_dict[csv_name] = {
-                "name": csv_name,
-                "count": len(existing_rows),
-                "avg_scores": [avg_score],
-                "difficulty_map": {"level0": 0},
-            }
     else:
-        fieldnames = ["id", score_col_name, "difficulty"]
+        fieldnames = ["id"]
+        for score_col_name in model_score_cols.values():
+            fieldnames.append(score_col_name)
+        fieldnames.append("difficulty")
+
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
-            for case_name, avg_score_val in case_averages.items():
-                writer.writerow({
-                    "id": case_name,
-                    score_col_name: avg_score_val,
-                    "difficulty": "level0",
-                })
+            for case_id in all_case_ids:
+                row = {"id": case_id, "difficulty": "level0"}
+                for model_name, score_col_name in model_score_cols.items():
+                    row[score_col_name] = model_scores[model_name].get(case_id, 0)
+                writer.writerow(row)
 
+    avg_scores = []
+    for model_name, scores in model_scores.items():
+        if len(scores) > 0:
+            avg = sum(scores.values()) / len(scores)
+        else:
+            avg = 0.0
+        avg_scores.append(avg)
+        print(f"  {model_name}: avg_score = {avg:.4f}")
+
+    overall_avg = sum(avg_scores) / len(avg_scores) if avg_scores else 0.0
+    print(f"Overall average score: {overall_avg:.4f}")
+
+    if abs(overall_avg) < 1e-6:
+        print()
+        print("=" * 60)
+        print(f"  ⚠ WARNING: overall avg_score is extremely close to 0!")
+        print(f"  avg_score = {overall_avg}")
+        print("=" * 60)
+        print()
+
+    if os.path.exists(info_path):
+        with open(info_path, "r", encoding="utf-8") as f:
+            info_data = json.load(f)
+    else:
+        info_data = []
+
+    info_dict = {item["name"]: item for item in info_data}
+
+    if csv_name in info_dict:
+        info_dict[csv_name]["avg_scores"] = avg_scores
+        info_dict[csv_name]["count"] = len(all_case_ids)
+    else:
         info_dict[csv_name] = {
             "name": csv_name,
-            "count": count,
-            "avg_scores": [avg_score],
+            "count": len(all_case_ids),
+            "avg_scores": avg_scores,
             "difficulty_map": {"level0": 0},
         }
 
@@ -163,12 +158,12 @@ def generate_metadata(eval_dir: str, output_dir: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert terminal-bench-2.0 eval results to metadata"
+        description="Convert terminus2 eval CSV results to metadata"
     )
     parser.add_argument(
-        "--eval_dir",
-        required=True,
-        help="Path to the model evaluation folder (e.g. .../Forge__Gemini-3.1-Pro-Preview)",
+        "csv_files",
+        nargs="+",
+        help="Path(s) to eval CSV file(s)",
     )
     parser.add_argument(
         "--output_dir",
@@ -177,7 +172,7 @@ def main():
     )
     args = parser.parse_args()
 
-    generate_metadata(args.eval_dir, args.output_dir)
+    generate_metadata(args.csv_files, args.output_dir)
 
 
 if __name__ == "__main__":
